@@ -18,9 +18,18 @@ using namespace std::chrono_literals;
 
 enum class DecoderState { Ready, Running, EndOfStream };
 
+struct AvFrameDeleter {
+  void operator()(AVFrame *frame) {
+    if (frame) {
+      auto *tmp = frame;
+      av_frame_free(&tmp);
+    }
+  }
+};
+
 struct DecodedFrame {
   double time;
-  AVFrame *frame;
+  std::shared_ptr<AVFrame> frame;
 };
 
 class VideoDecoder {
@@ -61,7 +70,7 @@ class VideoDecoder {
 
     DecodedFrame out;
     while (_decoded_frames.try_pop(out)) {
-      result.emplace_back(out);
+      result.emplace_back(std::move(out));
     }
 
     return result;
@@ -72,7 +81,7 @@ class VideoDecoder {
     _decoding_thread.join();
 
     sws_free_context(&sws_ctx);
-    avformat_free_context(_format_ctx);
+    avformat_close_input(&_format_ctx);
     avcodec_free_context(&_codec_ctx);
 
     // Will be freed by context frees
@@ -92,8 +101,8 @@ class VideoDecoder {
 
  private:
   void decoding_loop(std::stop_token stop_token) {
-    const auto packet = av_packet_alloc();
-    const auto recv_frame = av_frame_alloc();
+    auto packet = av_packet_alloc();
+    auto recv_frame = av_frame_alloc();
 
     const auto max_queued_frames = 3;
 
@@ -123,6 +132,9 @@ class VideoDecoder {
         }
       }
     }
+
+    av_packet_free(&packet);
+    av_frame_free(&recv_frame);
   }
 
   void decode_next_frame(AVPacket *packet, AVFrame *recv_frame) {
@@ -189,10 +201,9 @@ class VideoDecoder {
 
       auto frame = av_frame_alloc();
       av_frame_move_ref(frame, recv_frame);
-
       last_decoded_frame_time = frame_time;
 
-      _decoded_frames.push({.time = frame_time, .frame = frame});
+      _decoded_frames.push({.time = frame_time, .frame = std::shared_ptr<AVFrame>(frame, AvFrameDeleter{})});
     }
   }
 
@@ -250,8 +261,6 @@ class VideoDecoder {
 
     return true;
   }
-
-  std::atomic<bool> _stop_decoding_loop = false;
 
   std::jthread _decoding_thread;
 

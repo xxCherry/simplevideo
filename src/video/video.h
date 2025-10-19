@@ -100,8 +100,6 @@ class Video {
       const int32_t rgba_stride[4] = {4 * width, 0, 0, 0};
       sws_scale(_decoder.sws_ctx, _last_frame->frame->data, _last_frame->frame->linesize, 0, _last_frame->frame->height, &pixels, rgba_stride);
 
-      av_frame_free(&_last_frame->frame);
-
       on_tex_update(_pixel_data);
 
       _last_frame_shown = true;
@@ -125,10 +123,15 @@ class Video {
 
   double speed = 1.0;
 
+  ~Video() {}
+
  private:
   void seek_into_sync() {
     _decoder.seek(playback_position);
-    _available_frames = {};
+
+    while (!_available_frames.empty()) {
+      _available_frames.pop();
+    }
   }
 
   bool is_next_frame_valid(DecodedFrame frame) {

@@ -1,0 +1,17 @@
+build
+lib/node.lib
+lib/raylib.lib
+include/js_native_api.h
+include/js_native_api_types.h
+include/napi.h
+include/napi-inl.h
+include/node_api.h
+include/node_api_types.h
+include/raylib.h
+include/raymath.h
+include/rcamera.h
+include/rlgl.h
+src/app
+.cache
+dist
+node_modules

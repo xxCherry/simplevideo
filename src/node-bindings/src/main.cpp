@@ -1,6 +1,4 @@
 #include <napi.h>
-#include <raylib.h>
-#include <rlgl.h>
 #include <video.h>
 
 #define ARG_CHECK(arg_count)                                                         \

@@ -2,7 +2,6 @@
 
 #include <functional>
 #include <optional>
-#include <print>
 #include <thread>
 
 extern "C" {
@@ -39,10 +38,9 @@ class VideoDecoder {
       return false;
     }
 
-    _decoding_thread = std::thread([this]() {
-      decoding_loop();
+    _decoding_thread = std::jthread([this]() {
+      decoding_loop(_decoding_thread.get_stop_token());
     });
-    _decoding_thread.detach();
 
     return true;
   }
@@ -70,9 +68,8 @@ class VideoDecoder {
   }
 
   ~VideoDecoder() {
-    _stop_decoding_loop = true;
-
-    //_thread_state
+    _decoding_thread.request_stop();
+    _decoding_thread.join();
 
     sws_free_context(&sws_ctx);
     avformat_free_context(_format_ctx);
@@ -94,13 +91,13 @@ class VideoDecoder {
   std::optional<double> skip_output_until_time;
 
  private:
-  void decoding_loop() {
+  void decoding_loop(std::stop_token stop_token) {
     const auto packet = av_packet_alloc();
     const auto recv_frame = av_frame_alloc();
 
     const auto max_queued_frames = 3;
 
-    while (!_stop_decoding_loop) {
+    while (!stop_token.stop_requested()) {
       switch (state) {
         case DecoderState::Ready:
         case DecoderState::Running:
@@ -256,7 +253,7 @@ class VideoDecoder {
 
   std::atomic<bool> _stop_decoding_loop = false;
 
-  std::thread _decoding_thread;
+  std::jthread _decoding_thread;
 
   std::string _path;
 

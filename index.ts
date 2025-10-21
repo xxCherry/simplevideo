@@ -27,6 +27,14 @@ export class Video {
     this.start();
   }
 
+  static enableLog(): void {
+    binding.videoEnableLog();
+  }
+
+  static disableLog(): void {
+    binding.videoDisableLog();
+  }
+
   private start(): void {
     binding.videoStart(this.videoExternal);
   }

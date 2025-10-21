@@ -123,8 +123,6 @@ class Video {
 
   double speed = 1.0;
 
-  ~Video() {}
-
  private:
   void seek_into_sync() {
     _decoder.seek(playback_position);

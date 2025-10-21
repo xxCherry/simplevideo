@@ -178,6 +178,26 @@ Napi::Value video_destroy(const Napi::CallbackInfo &args) {
   return env.Undefined();
 }
 
+Napi::Value video_enable_log(const Napi::CallbackInfo &args) {
+  const auto env = args.Env();
+
+  ARG_CHECK(0);
+
+  logger::enable_log();
+
+  return env.Undefined();
+}
+
+Napi::Value video_disable_log(const Napi::CallbackInfo &args) {
+  const auto env = args.Env();
+
+  ARG_CHECK(0);
+
+  logger::disable_log();
+
+  return env.Undefined();
+}
+
 }  // namespace
 
 Napi::Object register_exports(Napi::Env env, Napi::Object exports) {
@@ -199,6 +219,8 @@ Napi::Object register_exports(Napi::Env env, Napi::Object exports) {
   register_export("videoSetLoop", video_set_loop);
   register_export("videoSeek", video_seek);
   register_export("videoIsPlaying", video_is_playing);
+  register_export("videoEnableLog", video_enable_log);
+  register_export("videoDisableLog", video_disable_log);
 
   return exports;
 }

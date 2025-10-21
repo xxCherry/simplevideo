@@ -11,6 +11,7 @@ extern "C" {
 }
 
 #include <concurrent_queue.h>
+#include <logger.h>
 #include <chrono>
 #include <string>
 
@@ -80,13 +81,20 @@ class VideoDecoder {
     _decoding_thread.request_stop();
     _decoding_thread.join();
 
+    logger::log("freeing sws context {:#x}", reinterpret_cast<uintptr_t>(sws_ctx));
     sws_free_context(&sws_ctx);
+
+    logger::log("closing avformat input {:#x}", reinterpret_cast<uintptr_t>(_format_ctx));
     avformat_close_input(&_format_ctx);
+
+    logger::log("freeing avcodec context {:#x}", reinterpret_cast<uintptr_t>(_codec_ctx));
     avcodec_free_context(&_codec_ctx);
 
     // Will be freed by context frees
     _stream = nullptr;
     _codec = nullptr;
+
+    logger::log("video decoder destroyed");
   }
 
   SwsContext *sws_ctx;

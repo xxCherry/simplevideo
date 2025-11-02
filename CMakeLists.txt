@@ -9,8 +9,13 @@ set(CMAKE_CXX_EXTENSIONS        ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/dist)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/dist)
 
+if (WIN32)
 set(FFMPEG_DOWNLOAD_URL https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full-shared.7z)
+else()
+set(FFMPEG_DOWNLOAD_URL https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl-shared.tar.xz)
+endif()
 
 set(NODE_DOWNLOAD_URL https://nodejs.org/dist/v24.8.0/win-x64/node.lib)
 set(NODE_API_INCLUDE_URL https://github.com/nodejs/node-api-headers/raw/refs/heads/main/include)
@@ -27,9 +32,11 @@ FetchContent_MakeAvailable(ffmpeg)
 
 # node headers download
 
-file(DOWNLOAD
-    ${NODE_DOWNLOAD_URL}
-    ${CMAKE_SOURCE_DIR}/lib/node.lib)
+if (WIN32)
+    file(DOWNLOAD
+        ${NODE_DOWNLOAD_URL}
+        ${CMAKE_SOURCE_DIR}/lib/node.lib)
+endif()
 
 file(DOWNLOAD
     ${NODE_API_INCLUDE_URL}/js_native_api.h

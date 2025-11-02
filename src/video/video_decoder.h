@@ -56,7 +56,7 @@ class VideoDecoder {
   }
 
   void seek(double target) {
-    _cmds.push([this, target]() {
+    _cmds.enqueue([this, target]() {
       avcodec_flush_buffers(_codec_ctx);
       av_seek_frame(_format_ctx, _stream->index, static_cast<long>(target / _time_base_sec / 1000.0), AVSEEK_FLAG_BACKWARD);
 
@@ -70,7 +70,7 @@ class VideoDecoder {
     std::vector<DecodedFrame> result;
 
     DecodedFrame out;
-    while (_decoded_frames.try_pop(out)) {
+    while (_decoded_frames.try_dequeue(out)) {
       result.emplace_back(std::move(out));
     }
 
@@ -118,7 +118,7 @@ class VideoDecoder {
       switch (state) {
         case DecoderState::Ready:
         case DecoderState::Running:
-          if (_decoded_frames.unsafe_size() < max_queued_frames) {
+          if (_decoded_frames.size_approx() < max_queued_frames) {
             decode_next_frame(packet, recv_frame);
           } else {
             state = DecoderState::Ready;
@@ -134,7 +134,7 @@ class VideoDecoder {
       }
 
       std::function<void()> cmd;
-      while (_cmds.try_pop(cmd)) {
+      while (_cmds.try_dequeue(cmd)) {
         if (cmd) {
           cmd();
         }
@@ -211,7 +211,7 @@ class VideoDecoder {
       av_frame_move_ref(frame, recv_frame);
       last_decoded_frame_time = frame_time;
 
-      _decoded_frames.push({.time = frame_time, .frame = std::shared_ptr<AVFrame>(frame, AvFrameDeleter{})});
+      _decoded_frames.enqueue({.time = frame_time, .frame = std::shared_ptr<AVFrame>(frame, AvFrameDeleter{})});
     }
   }
 
@@ -286,6 +286,6 @@ class VideoDecoder {
 
   double _time_base_sec;
 
-  Concurrency::concurrent_queue<DecodedFrame> _decoded_frames;
-  Concurrency::concurrent_queue<std::function<void()>> _cmds;
+  moodycamel::ConcurrentQueue<DecodedFrame> _decoded_frames;
+  moodycamel::ConcurrentQueue<std::function<void()>> _cmds;
 };

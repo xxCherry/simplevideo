@@ -1,9 +1,15 @@
 let binding: any;
 
-try {
-  binding = require("./dist/node-bindings.node");
-} catch {
-  binding = require("./dist/Release/node-bindings.node");
+if (process.platform == "win32") {
+  try {
+    binding = require("./dist/node-bindings.node");
+  } catch {
+    binding = require("./dist/Release/node-bindings.node");
+  }
+} else if (process.platform == "linux") {
+    binding = require("./dist/libnode-bindings.node");
+} else {
+  throw new Error("Unsupported platform");
 }
 
 type TextureUpdateCb = (pixelsAddress: number) => void;

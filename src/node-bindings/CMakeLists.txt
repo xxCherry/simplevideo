@@ -38,12 +38,18 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 function(copy_ffmpeg_lib LIB_NAME)
-add_custom_command(
-  TARGET ${PROJECT_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy
-          ${FFMPEG_LIBRARY_DIR}/${LIB_PREFIX}${LIB_NAME}${EXTENSION}
-          ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}${COPY_POSTFIX}/
-)
+  file(GLOB LIB_FILES
+    "${FFMPEG_LIBRARY_DIR}/${LIB_PREFIX}${LIB_NAME}*${EXTENSION}"
+  )
+
+  list(GET LIB_FILES 0 LIB_FILE)
+
+  add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+            "${LIB_FILE}"
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}${COPY_POSTFIX}/"
+  )
 endfunction()
 
 copy_ffmpeg_lib("avcodec")
